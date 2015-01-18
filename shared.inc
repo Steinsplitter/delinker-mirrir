@@ -37,9 +37,21 @@ class CommonsDelinquent {
 		return $this->last_db->real_escape_string ( $s ) ;
 	}
 	
+	function isBadWiki ( $wiki ) {
+		if ( $wiki == 'ukwikimedia' ) return true ;
+		if ( preg_match ( '/^wikimania/' , $wiki  ) ) return true ;
+		return false ; // Wiki is OK
+	}
+	
 	function hasLocalFile ( $wiki , $file ) {
 		$ret = false ;
-		$this->last_db = openDBwiki ( $wiki ) ;
+#		print "OPENING 1: $wiki\n" ;
+		$db = openDBwiki ( $wiki ) ; ;
+		if ( $db === false ) {
+			print "FAILED TO OPEN $wiki - returnriung false\n" ;
+			return false ;
+		}
+		$this->last_db = $db ;
 		$sql = "SELECT * FROM image WHERE img_name='" . $this->getDBsafe($file) . "' LIMIT 1" ;
 		$result = $this->runQuery ( $this->last_db , $sql ) ;
 		while($o = $result->fetch_object()) $ret = true ;
@@ -67,6 +79,9 @@ class CommonsDelinquent {
 		if ( $wiki == 'mediawikiwiki' ) return 'www.mediawiki.org' ;
 		if ( $wiki == 'metawiki' ) return 'meta.wikimedia.org' ;
 		if ( $wiki == 'incubatorwiki' ) return 'incubator.wikimedia.org' ;
+		if ( preg_match ( '/(.+)wikimedia' , $wiki , $m ) ) return $m[1] . ".wikimedia.org" ;
+		if ( preg_match ( '/^(wikimania\d+)wiki$/' , $wiki , $m ) ) return $m[1] . ".wikimedia.org" ;
+
 		if ( preg_match ( '/^(.+?)(wik.+)$/' , $wiki , $m ) ) {
 			$server = str_replace('_','-',$m[1]) . "." ;
 			if ( $m[2] == 'wiki' ) $server .= 'wikipedia' ;
@@ -101,6 +116,7 @@ class CommonsDelinquent {
 			$this->last_exception = $e->getMessage() ;
 			$x = false ;
 		}
+#		print_r ( $x ) ;
 		$api->logout() ;
 		return $x ;
 	}

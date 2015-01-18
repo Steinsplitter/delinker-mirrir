@@ -8,8 +8,14 @@ require_once ( './shared.inc' ) ;
 
 class CommonsDelinquentDemon extends CommonsDelinquent {
 
-	var $delay_minutes = 1 ;  # Wait after deletion
+	var $delay_minutes = 4 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
+	var $comments = array() ;
+	var $comments_default = array (
+		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,
+		'replace' => 'Replacing $1 with [[File:$2]] (by [[commons:User:$3|$3]] because: $4).'
+	) ;
+	
 
 	// Returns the last timestamp in the tool database, or a dummy (current time - X min)
 	function getLastTimestamp () {
@@ -41,7 +47,10 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 		# Get all file deletions
 		$delink_files = array() ; # Files to delink
-		$sql = "SELECT * FROM logging WHERE log_type='delete' AND log_action='delete' AND log_timestamp>='$max_ts' AND log_timestamp<'$cur_ts' AND log_namespace=6 AND NOT EXISTS (SELECT * FROM image WHERE img_name=log_title) ORDER BY log_timestamp ASC" ;
+		$sql = "SELECT * FROM logging WHERE log_type='delete' AND log_action='delete' AND log_timestamp>='$max_ts' AND log_timestamp<'$cur_ts' AND log_namespace=6" ;
+		$sql .= " AND NOT EXISTS (SELECT * FROM image WHERE img_name=log_title)" ;
+		$sql .= " AND NOT EXISTS (SELECT * FROM page WHERE page_title=log_title AND page_namespace=6 AND page_is_redirect=1)" ; # Do not remove redirects. Is that OK???
+		$sql .= " ORDER BY log_timestamp ASC" ;
 		$result = $this->runQuery ( $db_co , $sql ) ;
 		while($o = $result->fetch_object()){
 			$delink_files[] = $o ;
@@ -52,10 +61,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$deletion->usage = array() ; # Usage instances for this file
 			$result = $this->runQuery ( $db_co , $sql ) ;
 			while($o = $result->fetch_object()){
+				if ( $this->isBadWiki($o->gil_wiki) ) continue ;
 				$deletion->usage[] = $o ;
 			}
 		}
 		$db_co->close() ;
+//		print_r ( $delink_files ) ;
 		return $delink_files ;
 	}
 	
@@ -66,14 +77,45 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		return true ;
 	}
 	
-	function constructUnlinkComment ( $file ) {
-		$pattern = 'Removing "$FILE", it has been deleted from Commons by $USER because: $COMMENT' ;
-		# TODO get i18n message pattern, if available
-		$pattern = preg_replace ( '/\$FILE/' , $file->log_title , $pattern ) ;
-		$pattern = preg_replace ( '/\$USER/' , '[[User:'.$file->log_user_text.']]' , $pattern ) ;
-		$pattern = preg_replace ( '/\$COMMENT/' , $file->log_comment , $pattern ) ;
-		$pattern = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:commons:\1|]]' , $pattern ) ; # Pointing to Commons (no pipe)
-		$pattern = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:commons:\1]]' , $pattern ) ; # Pointing to Commons (with pipe)
+	/**
+		mode	"summary" or "replace"
+	*/
+	function getLocalizedCommentPattern ( $wiki , $mode ) {
+		if ( !isset($mode) ) $mode = 'summary' ;
+		if ( isset ( $this->comments[$mode][$wiki] ) ) return $this->comments[$mode][$wiki] ;
+		$pattern = $this->comments_default[$mode] ; # Default
+		
+		# Try local translation
+		$api = $this->getAPI ( $wiki ) ;
+		if ( $api ) {
+			$pagename = 'User:CommonsDelinker/summary-I18n' ;
+			$services = new \Mediawiki\Api\MediawikiFactory( $api );
+			$page = $services->newPageGetter()->getFromTitle( $pagename );
+			$revision = $page->getRevisions()->getLatest();
+		
+			if ( $revision ) {
+				$pattern = $revision->getContent()->getData() ;
+			}
+		}
+		
+		
+		$this->comments[$mode][$wiki] = $pattern ;
+		return $pattern ;
+	}
+	
+	function constructUnlinkComment ( $file , $usage ) {
+		$pattern = $this->getLocalizedCommentPattern ( $usage->gil_wiki ) ;
+		
+		$c = $file->log_comment ;
+		if ( $usage->wiki != 'commonswiki' ) { # Point original comment links to Commons
+			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:commons:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
+			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:commons:\1]]' , $c ) ; # Pointing to Commons (with pipe)
+		}
+
+		$pattern = preg_replace ( '/\$1/' , $file->log_title , $pattern ) ;
+		$pattern = preg_replace ( '/\$2/' , $file->log_user_text , $pattern ) ;
+		$pattern = preg_replace ( '/\$3/' , $c , $pattern ) ;
+#		print "\n$pattern\n" ; exit ( 0 ) ; // TESTING
 		return $pattern ;
 	}
 	
@@ -89,7 +131,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			'wiki' => $usage->gil_wiki ,
 			'page' => $page ,
 			'namespace' => $usage->gil_page_namespace_id ,
-			'comment' => $this->constructUnlinkComment ( $file ) ,
+			'comment' => $this->constructUnlinkComment ( $file , $usage ) ,
 			'timestamp' => date ( 'YmdGis' ) ,
 			'log_id' => $file->log_id ,
 			'log_timestamp' => $file->log_timestamp ,
@@ -150,8 +192,14 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$this->setDone ( $e->id , 1 ) ; # OK!
 	}
 	
+	
+	
 	function performEditUnlinkText ( $e ) {
-#		if ( $e->wiki != 'enwiki' ) return ; # TESTING
+
+#		$e->page = "פורטל:אישים/היום_בהיסטוריה/14_במרץ" ; # TEsTING
+#		$e->wiki = 'hewiki' ; # TEsTING
+#		$e->file = "Paul_Ehrlich_4.jpg" ;
+
 		$api = $this->getAPI ( $e->wiki ) ;
 		if ( $api === false ) {
 			$this->setDone ( $e->id , 2 , "Could not connect to API" ) ;
@@ -161,6 +209,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$page = $services->newPageGetter()->getFromTitle( $e->page );
 		$revision = $page->getRevisions()->getLatest();
 		
+		
 		if ( !$revision ) {
 			$this->setDone ( $e->id , 2 , "Latest revision not found" ) ;
 			return ;
@@ -169,6 +218,9 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 #		print_r ( $revision ) ;
 		$rev_id = $revision->getId() ;
 		$text = $revision->getContent()->getData() ;
+		
+#		$text = "[[תמונה:Paul Ehrlich 4.jpg|ממוזער|שמאל|פאול ארליך|100px]]\n[[תמונה:Albert Einstein Head.jpg|שמאל|ממוזער|100px|אלברט איינשטיין]]\nblah blubb" ; # TESTING
+
 		
 		$file = $e->file ;
 		$first_letter = substr ( $e->file , 0 , 1 ) ;
@@ -180,15 +232,17 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$pattern = preg_replace ( '/\./' , '\\.' , $pattern ) ;
 //		if ( !preg_match ( "/\b".$pattern."\b/" , $text ) ) return ; # TODO mark this as obsolete in DB
 		
-		$pattern_file= "\b[a-zA-Z]+:$pattern\b" ; # e.g. File:x.jog
+		$pattern_file= "\b\w+:$pattern\b" ; # e.g. File:x.jog
 		$pattern_link = "\[\[\s*$pattern_file.*?(\[\[[^\]\[]+?\]\].*?)*\]\]" ;
 		$pattern_gallery = "^\s*$pattern_file.*$" ;
+		$pattern_gallery2 = "^\s*$pattern\s*\|.*$" ;
 		
 		$new_text = $text ;
-		$new_text = preg_replace ( "/ *$pattern_link */" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/$pattern_gallery/" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/ *$pattern_file */" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/ *\b$pattern\b */" , '' , $new_text ) ;
+		$new_text = preg_replace ( "/ *$pattern_link */u" , '' , $new_text ) ;
+		$new_text = preg_replace ( "/$pattern_gallery/u" , '' , $new_text ) ;
+		$new_text = preg_replace ( "/$pattern_gallery2/u" , '' , $new_text ) ;
+		$new_text = preg_replace ( "/ *$pattern_file */u" , '' , $new_text ) ;
+		$new_text = preg_replace ( "/ *\b$pattern\b */u" , '' , $new_text ) ;
 		
 		if ( $text == $new_text ) { # No change
 			$this->setDone ( $e->id , 2 , 'File link not found in page' ) ;
@@ -197,9 +251,11 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		
 		print "Editing " . $e->wiki . ":" . $e->page . " to unlink " . $e->file . "\n" ;
 		
+#		print "$new_text\n" ; exit ( 0 ) ; # TESTING
+		
 		$params = array (
 			'title' => $e->page ,
-			'text' => $new_text ,
+			'text' => trim($new_text) ,
 			'summary' => $e->comment ,
 			'bot' => 1
 		) ;
@@ -212,8 +268,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$this->setDone ( $e->id , 2 , $this->last_exception ) ;
 		}
 
-#		$revision->getContent()->setText( $new_text );
-#		$services->newRevisionSaver()->save( $revision );
 	}
 	
 	function performEditUnlink ( $e ) {
@@ -271,7 +325,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 	// Unlinks deleted files
 	function run () {
-
 		$max_ts = $this->getLastTimestamp() ;
 		$delink_files = $this->getRecentDeletedFiles ( $max_ts ) ;
 		$this->addUnlinkEvents ( $delink_files ) ;

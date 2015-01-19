@@ -24,11 +24,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		# Open tool database
 		$db = $this->getToolDB() ;
 		
-		# TESTING FIXME BEGIN
-#		$sql = "TRUNCATE event" ;
-#		$result = $this->runQuery ( $db , $sql ) ;
-		# TESTING END
-
 		# Get highest timestamp in tool DB as a starting point
 		$max_ts = '' ;
 		$sql = "SELECT max(log_timestamp) AS max_ts FROM event WHERE done=1" ; # Timestamp of Commons logging table, NOT tool edit timestamp!
@@ -44,7 +39,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	function getRecentDeletedFiles ( $max_ts ) {
 		# Open Commons database replica
 		$db_co = $this->getCommonsDB() ;
-		
 		$cur_ts = date ( 'YmdHis' , time() - $this->delay_minutes*60 ) ;
 
 		# Get all file deletions
@@ -71,12 +65,54 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 //		print_r ( $delink_files ) ;
 		return $delink_files ;
 	}
+
+	function getFileUsage ( $filename ) {
+		$ret = array() ;
+		$db_co = $this->getCommonsDB() ;
+		$cur_ts = date ( 'YmdHis' , time() - $this->delay_minutes*60 ) ;
+		$sql = "SELECT * FROM globalimagelinks WHERE gil_to='" . $this->getDBsafe($filename) . "'" ;
+		$result = $this->runQuery ( $db_co , $sql ) ;
+		while($o = $result->fetch_object()){
+			if ( $this->isBadWiki($o->gil_wiki) ) continue ;
+			$ret[] = $o ;
+		}
+		$db_co->close() ;
+		return $ret ;
+	}
 	
 	function canUnlinkFromNamespace ( $usage ) {
 		if ( $usage->gil_page_namespace_id == 2 ) return false ; // Skip user namespace
 		if ( $usage->gil_page_namespace_id % 2 > 0 ) return false ; // Skip talk pages
 		if ( $usage->gil_page_namespace_id < 0 ) return false ; // Paranoia
 		return true ;
+	}
+
+	function fileExistenceSanityCheck ( $e ) {
+		if ( $this->hasLocalFile ( $e->wiki , $e->file ) ) {
+			$this->setDone ( $e->id , 2 , 'Skipped: Local file exists' ) ;
+			return false ;
+		}
+		if ( $this->hasLocalFile ( 'commonswiki' , $e->file ) ) {
+			$this->setDone ( $e->id , 2 , 'Skipped: Commons file exists' ) ;
+			return false ;
+		}
+		return true ;
+	}
+
+
+	function getTextFromWiki ( $wiki , $pagename ) {
+		$ret = false ;
+		$api = $this->getAPI ( $wiki ) ;
+		if ( $api ) {
+			$services = new \Mediawiki\Api\MediawikiFactory( $api );
+			$page = $services->newPageGetter()->getFromTitle( $pagename );
+			$revision = $page->getRevisions()->getLatest();
+		
+			if ( $revision ) {
+				$ret = $revision->getContent()->getData() ;
+			}
+		}
+		return $ret ;
 	}
 	
 	/**
@@ -88,18 +124,8 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$pattern = $this->comments_default[$mode] ; # Default
 		
 		# Try local translation
-		$api = $this->getAPI ( $wiki ) ;
-		if ( $api ) {
-			$pagename = 'User:CommonsDelinker/summary-I18n' ;
-			$services = new \Mediawiki\Api\MediawikiFactory( $api );
-			$page = $services->newPageGetter()->getFromTitle( $pagename );
-			$revision = $page->getRevisions()->getLatest();
-		
-			if ( $revision ) {
-				$pattern = $revision->getContent()->getData() ;
-			}
-		}
-		
+		$local = $this->getTextFromWiki ( $wiki , 'User:CommonsDelinker/' . $mode . '-I18n' ) ;
+		if ( $local !== false ) $pattern = $local ;
 		
 		$this->comments[$mode][$wiki] = $pattern ;
 		return $pattern ;
@@ -118,6 +144,22 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$pattern = preg_replace ( '/\$2/' , $file->log_user_text , $pattern ) ;
 		$pattern = preg_replace ( '/\$3/' , $c , $pattern ) ;
 #		print "\n$pattern\n" ; exit ( 0 ) ; // TESTING
+		return $pattern ;
+	}
+
+	function constructReplaceComment ( $params ) {
+		$pattern = $this->getLocalizedCommentPattern ( $params['wiki'] , 'replace' ) ;
+		
+		$c = $params['comment'] ;
+		if ( $params['wiki'] != 'commonswiki' ) { # Point original comment links to Commons
+			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:commons:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
+			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:commons:\1]]' , $c ) ; # Pointing to Commons (with pipe)
+		}
+
+		$pattern = preg_replace ( '/\$1/' , $params['file'] , $pattern ) ;
+		$pattern = preg_replace ( '/\$2/' , $params['replace_with_file'] , $pattern ) ;
+		$pattern = preg_replace ( '/\$3/' , 'CommonsDelinker' , $pattern ) ;
+		$pattern = preg_replace ( '/\$4/' , $c , $pattern ) ;
 		return $pattern ;
 	}
 	
@@ -164,17 +206,27 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		foreach ( $sqls AS $sql ) $this->runQuery ( $db , $sql ) ;
 		$db->close() ;
 	}
-
-	function performEditUnlinkWikidata ( $e ) {
-
-		# TODO check if item still exists
+	
+	function getJSON4Q ( $e ) {
 		$q = $e->page ;
 		$url = "http://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids=" . $q ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
-		if ( !isset ( $j->entities->$q->claims ) ) {
-			$this->setDone ( $e->id , 2 , "Did not find " . $e->file . " on " . $e->page . ", not trying again" ) ; # Fail, but don't try again
-			return ;
+		if ( isset ( $j->entities->$q->missing ) ) { # No such item
+			$this->setDone ( $e->id , 2 , "No such item $q" ) ;
+			return false ;
 		}
+		if ( !isset ( $j->entities->$q->claims ) ) {
+			$this->setDone ( $e->id , 2 , "Did not find " . $e->file . " on " . $q ) ;
+			return false ;
+		}
+		return $j ;
+	}
+
+	function performEditUnlinkWikidata ( $e ) {
+		$j = $this->getJSON4Q ( $e ) ;
+		if ( $j === false ) return ;
+
+		$q = $e->page ;
 		$j = $j->entities->$q->claims ;
 		$remove = array() ;
 		foreach ( $j AS $prop => $claims ) {
@@ -187,21 +239,71 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		}
 		
 		if ( count($remove) > 0 ) {
-			$ok = $this->editWikidata ( 'wbremoveclaims' , array ( 'claim'=>implode('|',$remove) ) ) ;
+			$ok = $this->editWikidata ( 'wbremoveclaims' , array ( 'claim'=>implode('|',$remove) , 'summary' => $e->comment ) ) ;
 			if ( !$ok ) return ;
 		}
 		
 		$this->setDone ( $e->id , 1 ) ; # OK!
 	}
-	
-	
-	
-	function performEditUnlinkText ( $e ) {
 
-#		$e->page = "פורטל:אישים/היום_בהיסטוריה/14_במרץ" ; # TEsTING
-#		$e->wiki = 'hewiki' ; # TEsTING
-#		$e->file = "Paul_Ehrlich_4.jpg" ;
 
+	function performEditReplaceWikidata ( $e ) {
+		$j = $this->getJSON4Q ( $e ) ;
+		if ( $j === false ) return ;
+
+		$q = $e->page ;
+
+		$j = $j->entities->$q->claims ;
+		$remove = array() ;
+		foreach ( $j AS $prop => $claims ) {
+			foreach ( $claims AS $c ) {
+				if ( $c->type != 'statement' ) continue ;
+				if ( $c->mainsnak->datatype != 'commonsMedia' ) continue ;
+				if ( str_replace ( ' ' , '_' , ucfirst ( trim ( $c->mainsnak->datavalue->value ) ) ) != $e->file ) continue ;
+				$remove[] = array ( $c->id , $prop ) ;
+			}
+		}
+		
+		if ( count($remove) > 0 ) {
+
+			# Remove old image entries
+			$ids = array() ;
+			foreach ( $remove AS $r ) $ids[] = $r[0] ;
+			$ok = $this->editWikidata ( 'wbremoveclaims' , array ( 'claim'=>implode('|',$ids) ) ) ;
+			if ( !$ok ) {
+				print "performEditReplaceWikidata:1 failed\n" ;
+				return ;
+			}
+
+			# Add new image entries
+			foreach ( $remove AS $r ) {
+				$params = array(
+					'snaktype' => 'value' ,
+					'property' => $r[1] ,
+					'value' => json_encode(str_replace('_',' ',$e->replace_with_file)) ,
+					'entity' => $e->page ,
+					'summary' => $e->comment
+				) ;
+
+				$ok = $this->editWikidata ( 'wbcreateclaim' , $params ) ;
+				if ( !$ok ) {
+					print "performEditReplaceWikidata:2 failed\n" ;
+					return ;
+				}
+
+			}
+		} else {
+			$this->setDone ( $e->id , 2 , 'File link not found in page' ) ;
+			return ;
+		}
+		
+		$this->setDone ( $e->id , 1 ) ; # OK!
+	}
+
+	
+	
+	
+	function performEditText ( $e ) {
 		$api = $this->getAPI ( $e->wiki ) ;
 		if ( $api === false ) {
 			$this->setDone ( $e->id , 2 , "Could not connect to API" ) ;
@@ -217,44 +319,43 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			return ;
 		}
 		
-#		print_r ( $revision ) ;
 		$rev_id = $revision->getId() ;
 		$text = $revision->getContent()->getData() ;
-		
-#		$text = "[[תמונה:Paul Ehrlich 4.jpg|ממוזער|שמאל|פאול ארליך|100px]]\n[[תמונה:Albert Einstein Head.jpg|שמאל|ממוזער|100px|אלברט איינשטיין]]\nblah blubb" ; # TESTING
-
 		
 		$file = $e->file ;
 		$first_letter = substr ( $e->file , 0 , 1 ) ;
 		if ( strtoupper($first_letter) != strtolower($first_letter) ) {
 			$file = "[" . strtoupper($first_letter) . strtolower($first_letter) . "]" . substr ( $e->file , 1 ) ;
-#			print $e->file . " => " . $file . "\n" ; exit ( 0 ) ;
 		}
 		$pattern = preg_replace ( '/[_ ]/' , '[ _]' , $file ) ;
 		$pattern = preg_replace ( '/\./' , '\\.' , $pattern ) ;
-//		if ( !preg_match ( "/\b".$pattern."\b/" , $text ) ) return ; # TODO mark this as obsolete in DB
-		
-		$pattern_file= "\b\w+:$pattern\b" ; # e.g. File:x.jog
-		$pattern_link = "\[\[\s*$pattern_file.*?(\[\[[^\]\[]+?\]\].*?)*\]\]" ;
-		$pattern_gallery = "^\s*$pattern_file.*$" ;
-		$pattern_gallery2 = "^\s*$pattern\s*\|.*$" ;
 		
 		$new_text = $text ;
-		$new_text = preg_replace ( "/ *$pattern_link */u" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/$pattern_gallery/u" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/$pattern_gallery2/u" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/ *$pattern_file */u" , '' , $new_text ) ;
-		$new_text = preg_replace ( "/ *\b$pattern\b */u" , '' , $new_text ) ;
+
+		if ( $e->action == 'unlink' ) {
+			$pattern_file= "\b\w+:$pattern\b" ; # e.g. File:x.jog
+			$pattern_link = "\[\[\s*$pattern_file.*?(\[\[[^\]\[]+?\]\].*?)*\]\]" ;
+			$pattern_gallery = "^\s*$pattern_file.*$" ;
+			$pattern_gallery2 = "^\s*$pattern\s*\|.*$" ;
+		
+			$new_text = preg_replace ( "/ *$pattern_link */u" , '' , $new_text ) ;
+			$new_text = preg_replace ( "/$pattern_gallery/u" , '' , $new_text ) ;
+			$new_text = preg_replace ( "/$pattern_gallery2/u" , '' , $new_text ) ;
+			$new_text = preg_replace ( "/ *$pattern_file */u" , '' , $new_text ) ;
+			$new_text = preg_replace ( "/ *\b$pattern\b */u" , '' , $new_text ) ;
+		} else if ( $e->action == 'replace' ) {
+			$new_file = ucfirst ( trim ( str_replace ( '_' , ' ' , $e->replace_with_file ) ) ) ;
+			$new_text = preg_replace ( "/\b$pattern\b/" , $new_file , $new_text ) ;
+		}
 		
 		if ( $text == $new_text ) { # No change
 			$this->setDone ( $e->id , 2 , 'File link not found in page' ) ;
 			return ;
 		}
 		
-		print "Editing " . $e->wiki . ":" . $e->page . " to unlink " . $e->file . "\n" ;
+		print "Editing " . $e->wiki . ":" . $e->page . " to " . $e->action . " " . $e->file . "\n" ;
 		
-#		print "$new_text\n" ; exit ( 0 ) ; # TESTING
-		
+	
 		$params = array (
 			'title' => $e->page ,
 			'text' => trim($new_text) ,
@@ -272,24 +373,27 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 	}
 	
+	function performEditReplace ( $e ) {
+		if ( !$this->fileExistenceSanityCheck($e) ) return ; # Nothing to do
+		if ( $e->wiki == 'wikidatawiki' && $e->namespace == 0 ) { # Wikidata item
+			$this->performEditReplaceWikidata ( $e ) ;
+		} else { # "Normal" edit
+			$this->performEditText ( $e ) ;
+		}
+	}
+	
 	function performEditUnlink ( $e ) {
-		if ( $this->hasLocalFile ( $e->wiki , $e->file ) ) {
-			$this->setDone ( $e->id , 2 , 'Skipped: Local file exists' ) ;
-			return ;
-		}
-		if ( $this->hasLocalFile ( 'commonswiki' , $e->file ) ) {
-			$this->setDone ( $e->id , 2 , 'Skipped: Commons file exists' ) ;
-			return ;
-		}
+		if ( !$this->fileExistenceSanityCheck($e) ) return ; # Nothing to do
 		if ( $e->wiki == 'wikidatawiki' && $e->namespace == 0 ) { # Wikidata item
 			$this->performEditUnlinkWikidata ( $e ) ;
 		} else { # "Normal" edit
-			$this->performEditUnlinkText ( $e ) ;
+			$this->performEditText ( $e ) ;
 		}
 	}
 	
 	function performEdit ( $e ) {
 		if ( $e->action == 'unlink' ) $this->performEditUnlink ( $e ) ;
+		else if ( $e->action == 'replace' ) $this->performEditReplace ( $e ) ;
 		else {
 			print_r ( $e ) ;
 			die ( "Unknown action " . $e->action ) ;
@@ -326,13 +430,110 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$this->clearBogusIssues ( $db ) ;
 		$db->close() ;
 	}
+	
+	function addReplaceEvents () {
+		$cmd_page = 'User:CommonsDelinker/commands' ;
+		$t = $this->getTextFromWiki ( 'commonswiki' , $cmd_page ) ;
+		if ( $t === false ) {
+			print "Could not open commands page\n" ;
+			return ;
+		}
+		
+		if ( preg_match ( '/\{\{[Ss]top\}\}/' , $t ) ) return ; // STOP
+		
+		$sqls = array() ;
+		
+#		$t = "{{/front}}\n{{universal replace|Overzicht - Hulst - 20118655 - RCE.jpg|Red Weaver Ant, Oecophylla smaragdina.jpg|reason=Testing}}" ; # TESTING
+		
+		$ts = date ( 'YmdHis' ) ;
+		$t = explode ( "\n" , $t ) ;
+		$nt = array() ;
+		foreach ( $t AS $l ) {
+			if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(.+?)\s*\}\}/' , $l , $m ) ) {
+				$nt[] = $l ;
+				continue ;
+			}
+			$old_file = ucfirst(str_replace(' ','_',trim($m[1]))) ;
+			$new_file = ucfirst(str_replace(' ','_',trim($m[2]))) ;
+			$comment = trim($m[3]) ;
+			
+			if ( !$this->hasLocalFile ( 'commonswiki' , $new_file ) ) {
+				$nt[] = "No such replacement file: " . $l ;
+				continue ;
+			}
+
+			if ( !preg_match('/\.svg$/i',$old_file) and preg_match('/\.svg$/i',$new_file) ) {
+				$nt[] = "Non-SVG to SVG replacement: " . $l ;
+				continue ;
+			}
+
+			$usages = $this->getFileUsage ( $old_file ) ;
+			
+			$db = $this->getToolDB() ;
+			
+			foreach ( $usages AS $usage ) {
+				$page = $usage->gil_page_title ;
+				if ( $usage->gil_page_namespace != '' ) $page = $usage->gil_page_namespace . ':' . $page ;
+				$params = array (
+					'action' => 'replace' ,
+					'file' => $old_file ,
+					'wiki' => $usage->gil_wiki ,
+					'page' => $page ,
+					'namespace' => $usage->gil_page_namespace_id ,
+					'timestamp' => $ts ,
+					'comment' => $comment ,
+					'log_id' => -1 ,
+					'log_timestamp' => $ts ,
+					'done' => 0 ,
+					'replace_with_file' => $new_file
+				) ;
+				$params['comment'] = $this->constructReplaceComment ( $params ) ;
+				print_r ( $params ) ;
+
+				$s1 = array() ;
+				$s2 = array() ;
+				foreach ( $params AS $k => $v ) {
+					$s1[] = $k ;
+					$s2[] = "'" . $this->getDBsafe($v) . "'" ;
+				}
+		
+				$sql = "INSERT IGNORE INTO event (" . implode ( ',' , $s1 ) . ") VALUES (" . implode ( "," , $s2 ) . ")" ;
+				$sqls[] = $sql ;
+
+			}
+			
+			$db->close() ;
+			
+		}
+		
+		$t = implode ( "\n" , $t ) ;
+		$nt = implode ( "\n" , $nt ) ;
+		if ( $t == $nt ) return ; // No change
+		
+		# Run SQL
+		$db = $this->getToolDB() ;
+		foreach ( $sqls AS $sql ) $this->runQuery ( $db , $sql ) ;
+		$db->close() ;
+		
+		# Save new text to Wiki
+		$params = array (
+			'title' => $cmd_page ,
+			'text' => trim($nt) ,
+			'summary' => 'Removing replace commands, will be executed soon' ,
+			'bot' => 1
+		) ;
+		
+		$x = $this->editWiki ( 'commonswiki' , 'edit' , $params ) ;
+	}
 
 	// Unlinks deleted files
 	function run () {
+#		$this->addReplaceEvents () ; exit ( 0 ) ;
+
 		$max_ts = $this->getLastTimestamp() ;
 		$delink_files = $this->getRecentDeletedFiles ( $max_ts ) ;
 		$this->addUnlinkEvents ( $delink_files ) ;
-
+		$this->addReplaceEvents () ;
 		$this->performEdits() ;
 	}
 

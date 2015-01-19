@@ -65,8 +65,13 @@ if ( $mode == 'latest' ) {
 	print "<tbody style='font-size:9pt'>" ;
 	while($o = $result->fetch_object()) {
 		print "<tr>" ;
-		print "<td nowrap>" . substr($o->timestamp,0,4).'-'.substr($o->timestamp,4,2).'-'.substr($o->timestamp,6,2).'&nbsp;'.substr($o->timestamp,8,2).':'.substr($o->timestamp,10,2).':'.substr($o->timestamp,12,2) . "</td>" ;
-		print "<td><a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->file) . "'>" . str_replace('_',' ',$o->file) . "</a></td>" ;
+		print "<td nowrap>" . substr($o->timestamp,0,4).'-'.substr($o->timestamp,4,2).'-'.substr($o->timestamp,6,2).'&nbsp;'.substr($o->timestamp,8,2).':'.substr($o->timestamp,10,2).':'.substr($o->timestamp,12,2) ;
+		if ( $o->action == 'replace' ) print "<br/><i>Replacing file</i>" ;
+		print "</td>" ;
+		
+		print "<td><a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->file) . "'>" . str_replace('_',' ',$o->file) . "</a>" ;
+		if ( $o->action == 'replace' ) print "<br/>&Rarr;<a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->replace_with_file) . "'>" . str_replace('_',' ',$o->replace_with_file) . "</a>" ;
+		print "</td>" ;
 
 		print "<td><a target='_blank' title='Bot edits' href='//" . $cd->wiki2server($o->wiki) . "/wiki/Special:Contributions/" . urlencode($cd->config['name']) . "'>" . $o->wiki . "</a>:" ;
 		print "<a target='_blank' href='//" . $cd->wiki2server($o->wiki) . "/wiki/" . htmlspecialchars($o->page) . "'>" . str_replace('_',' ',$o->page) . "</a></td>" ;

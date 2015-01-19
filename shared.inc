@@ -108,7 +108,9 @@ class CommonsDelinquent {
 		$api = $this->getAPI ( $wiki ) ;
 		if ( $api === false ) return false ;
 		$params['token'] = $api->getToken() ;
+		$params['bot'] = 1 ;
 		$x = false ;
+		if ( $this->debugging ) print_r ( $params ) ;
 		try {
 			$x = $api->postRequest( new \Mediawiki\Api\SimpleRequest( $action, $params ) );
 		} catch (Exception $e) {
@@ -116,14 +118,18 @@ class CommonsDelinquent {
 			$this->last_exception = $e->getMessage() ;
 			$x = false ;
 		}
-#		print_r ( $x ) ;
+		if ( $this->debugging ) print_r ( $x ) ;
 		$api->logout() ;
 		return $x ;
 	}
 
 	function editWikidata ( $action , $params ) {
 		$ret = $this->editWiki ( 'wikidatawiki' , $action , $params ) ;
-		if ( is_array($ret) ) return $x['success'] ;
+		if ( $this->debugging ) {
+			if ( is_array($ret) ) print "RET:" .  $ret['success'] . "\n" ;
+			else print "RET: FALSE\n" ;
+		}
+		if ( is_array($ret) ) return $ret['success'] ;
 		return false ;
 	}
 		

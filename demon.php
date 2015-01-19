@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?PHP
 
+chdir ( '/data/project/commons-delinquent' ) ;
+
 error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR); # E_ALL|
 ini_set('display_errors', 'On');
 
@@ -35,7 +37,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$max_ts = $o->max_ts ;
 		}
 		$db->close() ;
-		if ( $max_ts == '' ) $max_ts = date ( 'YmdGis' , time() - $this->fallback_minutes*60 ) ; # Fallback to current date minus X min
+		if ( $max_ts == '' ) $max_ts = date ( 'YmdHis' , time() - $this->fallback_minutes*60 ) ; # Fallback to current date minus X min
 		return $max_ts ;
 	}
 	
@@ -43,7 +45,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		# Open Commons database replica
 		$db_co = $this->getCommonsDB() ;
 		
-		$cur_ts = date ( 'YmdGis' , time() - $this->delay_minutes*60 ) ;
+		$cur_ts = date ( 'YmdHis' , time() - $this->delay_minutes*60 ) ;
 
 		# Get all file deletions
 		$delink_files = array() ; # Files to delink
@@ -132,7 +134,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			'page' => $page ,
 			'namespace' => $usage->gil_page_namespace_id ,
 			'comment' => $this->constructUnlinkComment ( $file , $usage ) ,
-			'timestamp' => date ( 'YmdGis' ) ,
+			'timestamp' => date ( 'YmdHis' ) ,
 			'log_id' => $file->log_id ,
 			'log_timestamp' => $file->log_timestamp ,
 			'done' => 0
@@ -296,7 +298,9 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	
 	function clearBogusIssues ( $db ) {
 		# Clear some previous issues
-		$sql = "update `event` set done=0,note='' where note like '%rate limit%'" ;
+		$sql = "update `event` set done=0,note='' where note like '%rate limit%' and done=2" ;
+		$this->runQuery ( $db , $sql ) ;
+		$sql = "update `event` set done=0,note='' where note like '%edit conflict%' and done=2" ;
 		$this->runQuery ( $db , $sql ) ;
 	}
 	
@@ -335,6 +339,9 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 }
 
 $demon = new CommonsDelinquentDemon ;
-$demon->run() ;
+while ( 1 ) {
+	$demon->run() ;
+	sleep ( 30 ) ;
+}
 
 ?>

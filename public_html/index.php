@@ -21,7 +21,9 @@ $status = array (
 
 print get_common_header ( '' , 'Commons Delinquent' ) ;
 
-print "<div class='lead'>The is a rewrite of <a href='/delinker'>CommonsDelinker</a>.</div>
+print "<div class='lead'>The is a rewrite of <a href='/delinker'>CommonsDelinker</a>.
+It finds files that were deleted on Commons, and removed their entries on other wikis to avoid ugly media redlinks.
+To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.</div>
 <div><form method='get'>
 <table class='table'>
 <tbody>
@@ -69,9 +71,12 @@ if ( $mode == 'latest' ) {
 		if ( $o->action == 'replace' ) print "<br/><i>Replacing file</i>" ;
 		print "</td>" ;
 		
-		print "<td><a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->file) . "'>" . str_replace('_',' ',$o->file) . "</a>" ;
-		if ( $o->action == 'replace' ) print "<br/>&Rarr;<a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->replace_with_file) . "'>" . str_replace('_',' ',$o->replace_with_file) . "</a>" ;
-		print "</td>" ;
+		if ( $o->action == 'replace' ) {
+			print "<td><a target='_blank' href='//commons.wikimedia.org/wiki/File:" . htmlspecialchars($o->file) . "'>" . str_replace('_',' ',$o->file) . "</a>" ;
+			print "<br/>&Rarr;<a target='_blank' href='//commons.wikimedia.org/wiki/File:" . htmlspecialchars($o->replace_with_file) . "'>" . str_replace('_',' ',$o->replace_with_file) . "</a></td>" ;
+		} else {
+			print "<td><a target='_blank' href='//commons.wikimedia.org/wiki/Special:Log?page=File:" . htmlspecialchars($o->file) . "'>" . str_replace('_',' ',$o->file) . "</a></td>" ;
+		}
 
 		print "<td><a target='_blank' title='Bot edits' href='//" . $cd->wiki2server($o->wiki) . "/wiki/Special:Contributions/" . urlencode($cd->config['name']) . "'>" . $o->wiki . "</a>:" ;
 		print "<a target='_blank' href='//" . $cd->wiki2server($o->wiki) . "/wiki/" . htmlspecialchars($o->page) . "'>" . str_replace('_',' ',$o->page) . "</a></td>" ;

@@ -10,7 +10,7 @@ require_once ( './shared.inc' ) ;
 
 class CommonsDelinquentDemon extends CommonsDelinquent {
 
-	var $delay_minutes = 4 ;  # Wait after deletion
+	var $delay_minutes = 10 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
 	var $comments = array() ;
 	var $comments_default = array (
@@ -58,6 +58,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$result = $this->runQuery ( $db_co , $sql ) ;
 			while($o = $result->fetch_object()){
 				if ( $this->isBadWiki($o->gil_wiki) ) continue ;
+				if ( $o->gil_page_namespace_id == 6 and $o->gil_wiki == 'commonswiki' and $o->gil_to == $filename ) continue ; // Self-reference
 				$deletion->usage[] = $o ;
 			}
 		}
@@ -81,7 +82,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	}
 	
 	function canUnlinkFromNamespace ( $usage ) {
-		if ( $usage->gil_page_namespace_id == 2 ) return false ; // Skip user namespace
 		if ( $usage->gil_page_namespace_id % 2 > 0 ) return false ; // Skip talk pages
 		if ( $usage->gil_page_namespace_id < 0 ) return false ; // Paranoia
 		return true ;

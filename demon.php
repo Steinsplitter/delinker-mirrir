@@ -37,6 +37,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		return $max_ts ;
 	}
 	
+	function isBadPage ( $o , $filename ) {
+		if ( $o->gil_page_namespace_id == 6 and $o->gil_wiki == 'commonswiki' and $o->gil_to == $filename ) return true ; // Self-reference
+		if ( $o->gil_page_namespace_id == 2 and $o->gil_wiki == 'commonswiki' and preg_match ( '/^\w+Bot\b/' , $o->gil_page_title ) ) return true ; // Bot subpage on Commons
+		return false ;
+	}
+	
 	function getRecentDeletedFiles ( $max_ts ) {
 		# Open Commons database replica
 		$db_co = $this->getCommonsDB() ;
@@ -59,7 +65,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$result = $this->runQuery ( $db_co , $sql ) ;
 			while($o = $result->fetch_object()){
 				if ( $this->isBadWiki($o->gil_wiki) ) continue ;
-				if ( $o->gil_page_namespace_id == 6 and $o->gil_wiki == 'commonswiki' and $o->gil_to == $filename ) continue ; // Self-reference
+				if ( $this->isBadPage($o,$filename) ) continue ;
 				$deletion->usage[] = $o ;
 			}
 		}
@@ -534,8 +540,6 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 	// Unlinks deleted files
 	function run () {
-#		$this->addReplaceEvents () ; exit ( 0 ) ;
-
 		$max_ts = $this->getLastTimestamp() ;
 		$delink_files = $this->getRecentDeletedFiles ( $max_ts ) ;
 		$this->addUnlinkEvents ( $delink_files ) ;

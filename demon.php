@@ -12,6 +12,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 	var $delay_minutes = 10 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
+	var $max_text_diff = 1500 ; # Max char diff
 	var $comments = array() ;
 	var $comments_default = array (
 		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,
@@ -87,12 +88,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		return true ;
 	}
 
-	function fileExistenceSanityCheck ( $e ) {
+	function fileExistenceSanityCheck ( $e , $check_commons ) {
 		if ( $this->hasLocalFile ( $e->wiki , $e->file ) ) {
 			$this->setDone ( $e->id , 2 , 'Skipped: Local file exists' ) ;
 			return false ;
 		}
-		if ( $this->hasLocalFile ( 'commonswiki' , $e->file ) ) {
+		if ( $check_commons and $this->hasLocalFile ( 'commonswiki' , $e->file ) ) {
 			$this->setDone ( $e->id , 2 , 'Skipped: Commons file exists' ) ;
 			return false ;
 		}
@@ -353,6 +354,11 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			return ;
 		}
 		
+		if ( strlen(trim($new_text)) == 0 or abs(strlen($text)-strlen($new_text)) > $this->max_text_diff ) {
+			$this->setDone ( $e->id , 2 , 'Text change too big' ) ;
+			return ;
+		}
+		
 		print "Editing " . $e->wiki . ":" . $e->page . " to " . $e->action . " " . $e->file . "\n" ;
 		
 	
@@ -374,7 +380,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	}
 	
 	function performEditReplace ( $e ) {
-		if ( !$this->fileExistenceSanityCheck($e) ) return ; # Nothing to do
+		if ( !$this->fileExistenceSanityCheck($e,false) ) return ; # Nothing to do
 		if ( $e->wiki == 'wikidatawiki' && $e->namespace == 0 ) { # Wikidata item
 			$this->performEditReplaceWikidata ( $e ) ;
 		} else { # "Normal" edit
@@ -383,7 +389,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	}
 	
 	function performEditUnlink ( $e ) {
-		if ( !$this->fileExistenceSanityCheck($e) ) return ; # Nothing to do
+		if ( !$this->fileExistenceSanityCheck($e,true) ) return ; # Nothing to do
 		if ( $e->wiki == 'wikidatawiki' && $e->namespace == 0 ) { # Wikidata item
 			$this->performEditUnlinkWikidata ( $e ) ;
 		} else { # "Normal" edit

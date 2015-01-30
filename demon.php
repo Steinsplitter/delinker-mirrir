@@ -143,8 +143,8 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		
 		$c = $file->log_comment ;
 		if ( $usage->wiki != 'commonswiki' ) { # Point original comment links to Commons
-			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:commons:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
-			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:commons:\1]]' , $c ) ; # Pointing to Commons (with pipe)
+			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:c:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
+			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:c:\1]]' , $c ) ; # Pointing to Commons (with pipe)
 		}
 
 		$pattern = preg_replace ( '/\$1/' , $file->log_title , $pattern ) ;
@@ -349,7 +349,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$new_text = preg_replace ( "/$pattern_gallery/u" , '' , $new_text ) ;
 			$new_text = preg_replace ( "/$pattern_gallery2/u" , '' , $new_text ) ;
 			$new_text = preg_replace ( "/ *$pattern_file */u" , '' , $new_text ) ;
-			$new_text = preg_replace ( "/= *\b$pattern\b */u" , '' , $new_text ) ;
+			$new_text = preg_replace ( "/= *\b$pattern\b */u" , '=' , $new_text ) ;
 		} else if ( $e->action == 'replace' ) {
 			$new_file = ucfirst ( trim ( str_replace ( '_' , ' ' , $e->replace_with_file ) ) ) ;
 			$new_text = preg_replace ( "/\b$pattern\b/" , $new_file , $new_text ) ;

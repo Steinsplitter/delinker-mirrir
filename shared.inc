@@ -40,6 +40,8 @@ class CommonsDelinquent {
 	function isBadWiki ( $wiki ) {
 		if ( $wiki == 'ukwikimedia' ) return true ;
 		if ( preg_match ( '/^wikimania/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/strategy/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/foundation/' , $wiki  ) ) return true ;
 		return false ; // Wiki is OK
 	}
 	

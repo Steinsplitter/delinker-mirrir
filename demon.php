@@ -13,6 +13,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	var $delay_minutes = 10 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
 	var $max_text_diff = 1500 ; # Max char diff
+	var $min_faux_template_icon = 1000 ;
 	var $comments = array() ;
 	var $comments_default = array (
 		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,
@@ -500,7 +501,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 					'replace_with_file' => $new_file
 				) ;
 				$params['comment'] = $this->constructReplaceComment ( $params ) ;
-				print_r ( $params ) ;
+//				print_r ( $params ) ;
 
 				$s1 = array() ;
 				$s2 = array() ;
@@ -537,6 +538,22 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		
 		$x = $this->editWiki ( 'commonswiki' , 'edit' , $params ) ;
 	}
+	
+	function fixFauxTemplateReplacements () {
+		$todo = array() ;
+		$db = $this->getToolDB() ;
+		$sql = 'select file,wiki, count(*) as cnt,namespace from event where done=0 group by file,wiki,namespace having cnt>' . $this->min_faux_template_icon ;
+		$result = $this->runQuery ( $db , $sql ) ;
+		while($o = $result->fetch_object()){
+			$file = $this->getDBsafe ( $o->file ) ;
+			$wiki = $this->getDBsafe ( $o->wiki ) ;
+			$todo[] = "UPDATE event SET done=2,note='Likely template icon, skipping' WHERE file='$file' AND wiki='$wiki' AND namespace=" . $o->namespace ;
+		}
+		foreach ( $todo AS $sql ) {
+			$this->runQuery ( $db , $sql ) ;
+		}
+		$db->close() ;
+	}
 
 	// Unlinks deleted files
 	function run () {
@@ -544,6 +561,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$delink_files = $this->getRecentDeletedFiles ( $max_ts ) ;
 		$this->addUnlinkEvents ( $delink_files ) ;
 		$this->addReplaceEvents () ;
+		$this->fixFauxTemplateReplacements() ;
 		$this->performEdits() ;
 	}
 

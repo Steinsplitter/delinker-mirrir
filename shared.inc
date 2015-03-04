@@ -42,6 +42,7 @@ class CommonsDelinquent {
 		if ( preg_match ( '/^wikimania/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/strategy/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/foundation/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/outreach/' , $wiki  ) ) return true ;
 		return false ; // Wiki is OK
 	}
 	
@@ -50,7 +51,7 @@ class CommonsDelinquent {
 #		print "OPENING 1: $wiki\n" ;
 		$db = openDBwiki ( $wiki ) ; ;
 		if ( $db === false ) {
-			print "FAILED TO OPEN $wiki - returnriung false\n" ;
+			print "FAILED TO OPEN $wiki - returning false\n" ;
 			return false ;
 		}
 		$this->last_db = $db ;

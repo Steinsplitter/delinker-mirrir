@@ -13,7 +13,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	var $delay_minutes = 10 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
 	var $max_text_diff = 1500 ; # Max char diff
-	var $min_faux_template_icon = 1000 ;
+	var $min_faux_template_icon = 500 ;
 	var $comments = array() ;
 	var $comments_default = array (
 		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,

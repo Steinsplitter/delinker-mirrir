@@ -43,19 +43,23 @@ class CommonsDelinquent {
 		if ( preg_match ( '/strategy/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/foundation/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/outreach/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/mxwikimedia/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/rswikimedia/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/tenwiki/' , $wiki  ) ) return true ;
+#		if ( preg_match ( '/^suwiki$/' , $wiki  ) ) return true ;
 		return false ; // Wiki is OK
 	}
 	
 	function hasLocalFile ( $wiki , $file ) {
 		$ret = false ;
 #		print "OPENING 1: $wiki\n" ;
-		$db = openDBwiki ( $wiki ) ; ;
+		$db = openDBwiki ( $wiki ) ;
 		if ( $db === false ) {
 			print "FAILED TO OPEN $wiki - returning false\n" ;
 			return false ;
 		}
 		$this->last_db = $db ;
-		$sql = "SELECT * FROM image WHERE img_name='" . $this->getDBsafe($file) . "' LIMIT 1" ;
+		$sql = "SELECT * FROM image WHERE img_name='" . $this->getDBsafe(str_replace(' ','_',$file)) . "' LIMIT 1" ;
 		$result = $this->runQuery ( $this->last_db , $sql ) ;
 		while($o = $result->fetch_object()) $ret = true ;
 		return $ret ;

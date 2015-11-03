@@ -19,11 +19,22 @@ $status = array (
 	2 => "<span style='color:red'>Skipped</span>"
 ) ;
 
+$cd = new CommonsDelinquent() ;
+$db = $cd->getToolDB() ;
+if($_GET["cnt"] == "true"){
+$sql = "select count(*) as cnt from  event where done=0" ;
+$result = $cd->runQuery ( $db , $sql ) ;
+while($o = $result->fetch_object()) $pending = $o->cnt ;
+}
 print get_common_header ( '' , 'Commons Delinquent' ) ;
-
 print "<div class='lead'>The is a rewrite of <a href='/delinker'>CommonsDelinker</a>.
 It finds files that were deleted on Commons, and removed their entries on other wikis to avoid ugly media redlinks.
-To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.</div>
+<small><br>To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.
+<a href='//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&cnt=true'>View count of pending edits</a><br/></small>";
+if($_GET["cnt"] == "true"){
+print "There are currently $pending edits pending.";
+}
+print "</div>
 <div><form method='get'>
 <table class='table'>
 <tbody>
@@ -45,8 +56,6 @@ To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:
 
 $mode = get_request ( 'mode' , 'latest' ) ;
 
-$cd = new CommonsDelinquent() ;
-$db = $cd->getToolDB() ;
 
 if ( $mode == 'latest' ) {
 	$num = get_request ( 'num' , 100 ) * 1 ;

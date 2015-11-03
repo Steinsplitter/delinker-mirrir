@@ -366,9 +366,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			return ;
 		}
 		
-		print "Editing " . $e->wiki . ":" . $e->page . " to " . $e->action . " " . $e->file . "\n" ;
+		if ( !isset($e->comment) ) $e->comment = '' ;
+		$e->comment = (string)$e->comment ;
+
+		print "Editing " . $e->wiki . ":" . $e->page . " to " . $e->action . " " . $e->file . " AS " . $e->comment . "\n" ;
 		
-	
+		
 		$params = array (
 			'title' => $e->page ,
 			'text' => trim($new_text) ,
@@ -388,6 +391,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	
 	function performEditReplace ( $e ) {
 		if ( !$this->fileExistenceSanityCheck($e,false) ) return ; # Nothing to do
+		if ( !isset($e->namespace) ) return ; # Paranoia
 		if ( $e->wiki == 'wikidatawiki' && $e->namespace == 0 ) { # Wikidata item
 			$this->performEditReplaceWikidata ( $e ) ;
 		} else { # "Normal" edit
@@ -536,12 +540,16 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			'bot' => 1
 		) ;
 		
+		print "Editing $cmd_page...\n" ;
 		$x = $this->editWiki ( 'commonswiki' , 'edit' , $params ) ;
+		print "Editing $cmd_page done.\n" ;
 	}
 	
 	function fixFauxTemplateReplacements () {
 		$todo = array() ;
 		$db = $this->getToolDB() ;
+		$sql = "DELETE FROM event WHERE action='' and file=''" ;
+		$result = $this->runQuery ( $db , $sql ) ;
 		$sql = 'select file,wiki, count(*) as cnt,namespace from event where done=0 group by file,wiki,namespace having cnt>' . $this->min_faux_template_icon ;
 		$result = $this->runQuery ( $db , $sql ) ;
 		while($o = $result->fetch_object()){
@@ -568,6 +576,11 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 }
 
 $demon = new CommonsDelinquentDemon ;
+
+//$demon->addReplaceEvents () ;
+//$demon->performEdits() ;
+//$demon->fixFauxTemplateReplacements() ;
+
 while ( 1 ) {
 	$demon->run() ;
 	sleep ( 30 ) ;

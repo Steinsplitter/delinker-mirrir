@@ -318,7 +318,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			return ;
 		}
 		$services = new \Mediawiki\Api\MediawikiFactory( $api );
-		$page = $services->newPageGetter()->getFromTitle( $e->page );
+		try {
+			$page = $services->newPageGetter()->getFromTitle( $e->page );
+		} catch (Exception $e) {
+			$this->setDone ( $e->id , 2 , "Page not found" ) ;
+			return ;
+		}
 		$revision = $page->getRevisions()->getLatest();
 		
 		

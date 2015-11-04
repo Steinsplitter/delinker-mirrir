@@ -586,6 +586,7 @@ $demon = new CommonsDelinquentDemon ;
 //$demon->performEdits() ;
 //$demon->fixFauxTemplateReplacements() ;
 
+$demon->performEdits() ;
 while ( 1 ) {
 	$demon->run() ;
 	sleep ( 30 ) ;

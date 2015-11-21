@@ -42,7 +42,7 @@ class CommonsDelinquent {
 		if ( preg_match ( '/^wikimania/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/strategy/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/foundation/' , $wiki  ) ) return true ;
-		if ( preg_match ( '/outreach/' , $wiki  ) ) return true ;
+#		if ( preg_match ( '/outreach/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/mxwikimedia/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/rswikimedia/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/tenwiki/' , $wiki  ) ) return true ;
@@ -85,6 +85,7 @@ class CommonsDelinquent {
 		if ( $wiki == 'commonswiki' ) return 'commons.wikimedia.org' ;
 		if ( $wiki == 'mediawikiwiki' ) return 'www.mediawiki.org' ;
 		if ( $wiki == 'metawiki' ) return 'meta.wikimedia.org' ;
+                if ( $wiki == 'outreachwiki' ) return 'outreach.wikimedia.org' ;
 		if ( $wiki == 'incubatorwiki' ) return 'incubator.wikimedia.org' ;
 		if ( preg_match ( '/(.+)wikimedia' , $wiki , $m ) ) return $m[1] . ".wikimedia.org" ;
 		if ( preg_match ( '/^(wikimania\d+)wiki$/' , $wiki , $m ) ) return $m[1] . ".wikimedia.org" ;

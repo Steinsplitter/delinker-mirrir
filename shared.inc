@@ -46,6 +46,8 @@ class CommonsDelinquent {
 		if ( preg_match ( '/mxwikimedia/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/rswikimedia/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/tenwiki/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/stqwiki/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/enwikinews/' , $wiki  ) ) return true ;
 #		if ( preg_match ( '/^suwiki$/' , $wiki  ) ) return true ;
 		return false ; // Wiki is OK
 	}

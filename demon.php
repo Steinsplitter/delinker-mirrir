@@ -347,7 +347,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 		if ( $e->action == 'unlink' ) {
 			$pattern_file= "\b\w+:$pattern\b" ; # e.g. File:x.jog
-			$pattern_link = "\[\[\s*$pattern_file.*?(\[\[[^\]\[]+?\]\].*?)*\]\]" ;
+			$pattern_link = "\[\[\s*$pattern_file(\[\[.*?\]\]|\[.*?\]|.*?)*\]\]" ;
 			$pattern_gallery = "^\s*$pattern_file.*$" ;
 			$pattern_gallery2 = "^\s*$pattern\s*\|.*$" ;
 		

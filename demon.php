@@ -41,6 +41,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	function isBadPage ( $o , $filename ) {
 		if ( $o->gil_page_namespace_id == 6 and $o->gil_wiki == 'commonswiki' and $o->gil_to == $filename ) return true ; // Self-reference
 		if ( $o->gil_page_namespace_id == 2 and $o->gil_wiki == 'commonswiki' and preg_match ( '/^\w+Bot\b/' , $o->gil_page_title ) ) return true ; // Bot subpage on Commons
+		if ( $o->gil_page_namespace_id == 4 and $o->gil_wiki == 'commonswiki' and preg_match ( '/(Deletion(_| )requests\/.*|Undeletion(_| )requests\/.*)\b/' , $o->gil_page_title ) ) return true ; // DR and UDR on Commons
 		return false ;
 	}
 	

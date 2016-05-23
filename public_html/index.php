@@ -26,24 +26,68 @@ $sql = "select count(*) as cnt from  event where done=0" ;
 $result = $cd->runQuery ( $db , $sql ) ;
 while($o = $result->fetch_object()) $pending = $o->cnt ;
 }
-print get_common_header ( '' , 'Commons Delinquent' ) ;
-print "<div class='lead'>The is a rewrite of <a href='/delinker'>CommonsDelinker</a>.
+//print get_common_header ( '' , 'Commons Delinquent' ) ;
+print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
+<head>
+        <meta http-equiv=\"Content-type\" content=\"text/html;charset=UTF-8\" />
+        <title>Commons Delinquent | Commons Delinker</title>
+  <link href=\"//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css\" rel=\"stylesheet\">
+  <style>
+    body {
+      padding-top: 60px;
+    }
+  </style>
+</head>
+<body>
+  <div class=\"navbar navbar-default navbar-fixed-top\">
+   <div class=\"container-fluid\">
+      <div class=\"navbar-header\">
+        <a class=\"navbar-brand\" href=\"index.php\">Commons Delinquent</a>
+      </div>
+
+        <ul class=\"nav navbar-nav navbar-right\">
+          <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&cnt=true\"><span class=\"glyphicon glyphicon-road\"></span> pending edits</a></li>
+          <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&status=true\"><span class=\"glyphicon glyphicon-eye-open\"></span> status</a></li>
+          <li><a href=\"//bitbucket.org/magnusmanske/commons-delinquent/src\"><span class=\"glyphicon glyphicon-wrench\"></span> code</a></li>
+        </ul>
+
+    </div>
+  </div>
+<div class=\"container\">
+";
+print "<div class='lead'>Commons Delinquent is a rewrite of <a href='/delinker'>CommonsDelinker</a>.
 It finds files that were deleted on Commons, and removed their entries on other wikis to avoid ugly media redlinks.
-<small><br>To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.
-<a href='//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&cnt=true'>View count of pending edits</a><br/></small>";
+<small><br>To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.";
 if($_GET["cnt"] == "true"){
-print "There are currently $pending edits pending.";
+print "<br><br><p class='alert alert-info'>There are currently $pending edits pending.</p>";
+print "<a class='btn btn-default' href='index.php' role='button'>Home</a>";
+print "</div></div>";
+exit();
 }
+if($_GET["status"] == "true"){
+$output2 = shell_exec('job -v demon');
+$output3 = str_replace("'demon'","",$output2);
+if (preg_match('/since/', $output2)) {
+    print "<br><br><p class='alert alert-success'><big>Bot is running...</big><br>$output3</p>";
+} else {
+    print "<br><br><p class='alert alert-danger'><big>Bot is not running.</big><br>$output3</p>";
+}
+print "<a class='btn btn-default' href='index.php' role='button'>Home</a>";
+print "</div></div>";
+exit();
+}
+
 print "</div>
 <div><form method='get'>
 <table class='table'>
 <tbody>
-<tr><th>File name</th><td><input type='text' name='image' style='width:100%' value='" . esc($image) . "' /></td></tr>
-<tr><th>Action</th><td><select name='action'>
+<tr><th>File name</th><td><input type='text' name='image' class='form-control' style='width:100%' value='" . esc($image) . "' /></td></tr>
+<tr><th>Action</th><td><select class='form-control' style='width:auto' name='action'>
 <option value='any' " . ($action=='any'?'selected':'') . ">Any</option>
 <option value='unlink' " . ($action=='unlink'?'selected':'') . ">Unlink</option>
 </select></td></tr>
-<tr><th>Result</th><td><select name='result'>
+<tr><th>Result</th><td><select class='form-control' style='width:auto' name='result'>
 <option value='any' " . ($result=='any'?'selected':'') . ">Any</option>
 <option value='0' " . ($result=='0'?'selected':'') . ">Pending</option>
 <option value='1' " . ($result=='1'?'selected':'') . ">Done</option>

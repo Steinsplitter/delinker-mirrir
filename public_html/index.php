@@ -56,6 +56,7 @@ print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http:/
   </div>
 <div class=\"container\">
 ";
+print "<a href='//commons.wikimedia.org/wiki/File:CommonsDelinker.svg' class='image' style = 'float:right;'><img alt='CommonsDelinker.svg' src='//upload.wikimedia.org/wikipedia/commons/thumb/d/da/CommonsDelinker.svg/40px-CommonsDelinker.svg.png' srcset='//upload.wikimedia.org/wikipedia/commons/thumb/d/da/CommonsDelinker.svg/60px-CommonsDelinker.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/d/da/CommonsDelinker.svg/80px-CommonsDelinker.svg.png 2x' data-file-width='300' data-file-height='400' height='53' width='40'></a>";
 print "<div class='lead'>Commons Delinquent is a rewrite of <a href='/delinker'>CommonsDelinker</a>.
 It finds files that were deleted on Commons, and removed their entries on other wikis to avoid ugly media redlinks.
 <small><br>To replace files globally, see <a href='https://commons.wikimedia.org/wiki/User:CommonsDelinker/commands'>this page</a>.";

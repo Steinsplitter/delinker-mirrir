@@ -51,7 +51,7 @@ print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http:/
           <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&cnt=true\"><span class=\"glyphicon glyphicon-road\"></span> <span tt=\"pendingedits\">pending edits</span></a></li>
           <!-- temp, does not work atm <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&status=true\"><span class=\"glyphicon glyphicon-eye-open\"></span> status</a></li> -->
           <li><a href=\"//bitbucket.org/magnusmanske/commons-delinquent/src\"><span class=\"glyphicon glyphicon-wrench\"></span> <span tt=\"code\">code</span></a></li>
-	  <li class=\"nav-item\" style = \"padding-top: 5px;\" id=\"tooltranslate_wrapper\"></li>
+          <li class=\"nav-item\" style = \"padding-top: 5px;\" id=\"tooltranslate_wrapper\"></li>
         </ul>
     </div>
   </div>";

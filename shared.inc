@@ -48,8 +48,10 @@ class CommonsDelinquent {
 		if ( preg_match ( '/tenwiki/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/stqwiki/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/enwikinews/' , $wiki  ) ) return true ;
-                if ( preg_match ( '/testwikidatawiki/' , $wiki  ) ) return true ;
+		if ( preg_match ( '/testwikidatawiki/' , $wiki  ) ) return true ;
 #		if ( preg_match ( '/^suwiki$/' , $wiki  ) ) return true ;
+                if ( preg_match ( '/usability/' , $wiki  ) ) return true ;
+                if ( $wiki == 'donatewiki' ) return true ;
 		return false ; // Wiki is OK
 	}
 	

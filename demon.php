@@ -17,7 +17,8 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	var $comments = array() ;
 	var $comments_default = array (
 		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,
-		'replace' => 'Replacing $1 with [[File:$2]] (by [[commons:User:$3|$3]] because: $4).'
+		'replace' => 'Replacing $1 with [[File:$2]] (by [[commons:User:$3|$3]] because: $4).' ,
+		'by' => ' Requested by [[User:$1|]].'
 	) ;
 	
 
@@ -169,6 +170,13 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$pattern = preg_replace ( '/\$2/' , $params['replace_with_file'] , $pattern ) ;
 		$pattern = preg_replace ( '/\$3/' , 'CommonsDelinker' , $pattern ) ;
 		$pattern = preg_replace ( '/\$4/' , $c , $pattern ) ;
+		
+		if ( isset($params['user']) and $params['user'] != '' ) {
+			$by = $this->getLocalizedCommentPattern ( $params['wiki'] , 'by' ) ;
+			$by = preg_replace ( '/\$1/' , $params['user'] , $by ) ;
+			$pattern .= ' ' . $by ;
+		}
+		
 		return $pattern ;
 	}
 	
@@ -473,12 +481,19 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$nt = array() ;
 		foreach ( $t AS $l ) {
 			if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(.+?)\s*\}\}/' , $l , $m ) ) {
-				$nt[] = $l ;
-				continue ;
+				if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(.+?)\s*\|\s*user\s*=\s*(.+?)\s*\}\}/' , $l , $m ) ) {
+					$nt[] = $l ;
+					continue ;
+				}
 			}
 			$old_file = ucfirst(str_replace(' ','_',trim($m[1]))) ;
 			$new_file = ucfirst(str_replace(' ','_',trim($m[2]))) ;
 			$comment = trim($m[3]) ;
+			$user = '' ;
+			if ( isset($m[4]) ) {
+				$user = str_replace(' ','_',trim($m[4])) ;
+				$user = preg_replace ( '/^\s*\[\[[^:]+(.+?)\s*(\||\]\]).*$/' , '$1' , $user ) ;
+			}
 			
 			if ( !$this->hasLocalFile ( 'commonswiki' , $new_file ) ) {
 				$nt[] = "No such replacement file: " . $l ;
@@ -507,6 +522,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 					'comment' => $comment ,
 					'log_id' => -1 ,
 					'log_timestamp' => $ts ,
+					'user' => $user ,
 					'done' => 0 ,
 					'replace_with_file' => $new_file
 				) ;

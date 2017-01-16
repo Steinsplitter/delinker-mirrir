@@ -16,7 +16,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	var $min_faux_template_icon = 500 ;
 	var $comments = array() ;
 	var $comments_default = array (
-		'summary' => 'Removing [[:c:File:$1]], it has been deleted from Commons by [[:c:User:$2|$2]] because: $3.' ,
+		'summary' => 'Removing [[:c:File:$1|$1]], it has been deleted from Commons by [[:c:User:$2|$2]] because: $3.' ,
 		'replace' => 'Replacing $1 with [[File:$2]] (by [[:c:User:$3|$3]] because: $4).' ,
 		'by' => ' Requested by [[User:$1|]].'
 	) ;

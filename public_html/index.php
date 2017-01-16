@@ -26,7 +26,6 @@ $sql = "select count(*) as cnt from  event where done=0" ;
 $result = $cd->runQuery ( $db , $sql ) ;
 while($o = $result->fetch_object()) $pending = $o->cnt ;
 }
-//print get_common_header ( '' , 'Commons Delinquent' ) ;
 print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
 <head>
@@ -49,7 +48,7 @@ print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http:/
       </div>
         <ul class=\"nav navbar-nav navbar-right\">
           <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&cnt=true\"><span class=\"glyphicon glyphicon-road\"></span> <span tt=\"pendingedits\">pending edits</span></a></li>
-          <!-- temp, does not work atm <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&status=true\"><span class=\"glyphicon glyphicon-eye-open\"></span> status</a></li> -->
+          <li><a href=\"//tools.wmflabs.org/commons-delinquent/?image=&action=null&result=null&status=true\"><span class=\"glyphicon glyphicon-eye-open\"></span> <span tt=\"status\">status</span></a></li>
           <li><a href=\"//bitbucket.org/magnusmanske/commons-delinquent/src\"><span class=\"glyphicon glyphicon-wrench\"></span> <span tt=\"code\">code</span></a></li>
           <li class=\"nav-item\" style = \"padding-top: 5px;\" id=\"tooltranslate_wrapper\"></li>
         </ul>
@@ -73,14 +72,13 @@ exit();
 }
 if($_GET["status"] == "true"){
 $output2 = shell_exec("job -v demon");
-echo shell_exec("job -v demon");
 $output3 = str_replace("'demon'","",$output2);
 if (preg_match('/has been running/', $output2)) {
-    print "<br><br><p class='alert alert-success'><big>Bot is running...</big><br>$output3</p>";
+    print "<br><br><p class='alert alert-success'><big><span tt=\"botrunning\">Bot is running...</span></big><br><small>$output3</small></p>";
 } else {
-    print "<br><br><p class='alert alert-danger'><big>Bot is not running.</big><br>$output3</p>";
+    print "<br><br><p class='alert alert-danger'><big>><span tt=\"botnotrunning\">Bot is not running.</span></big><br>$output3</p>";
 }
-print "<a class='btn btn-default' href='index.php' role='button'>Home</a>";
+print "<a class='btn btn-default' href='index.php' role='button'><span tt=\"home\">Home</span></a>";
 print "</div></div>";
 exit();
 }

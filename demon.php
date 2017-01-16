@@ -16,8 +16,8 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	var $min_faux_template_icon = 500 ;
 	var $comments = array() ;
 	var $comments_default = array (
-		'summary' => 'Removing "$1", it has been deleted from Commons by [[commons:User:$2|$2]] because: $3.' ,
-		'replace' => 'Replacing $1 with [[File:$2]] (by [[commons:User:$3|$3]] because: $4).' ,
+		'summary' => 'Removing [[:c:File:$1]], it has been deleted from Commons by [[:c:User:$2|$2]] because: $3.' ,
+		'replace' => 'Replacing $1 with [[File:$2]] (by [[:c:User:$3|$3]] because: $4).' ,
 		'by' => ' Requested by [[User:$1|]].'
 	) ;
 	
@@ -162,8 +162,8 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		
 		$c = $params['comment'] ;
 		if ( $params['wiki'] != 'commonswiki' ) { # Point original comment links to Commons
-			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:commons:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
-			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:commons:\1]]' , $c ) ; # Pointing to Commons (with pipe)
+			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:c:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
+			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:c:\1]]' , $c ) ; # Pointing to Commons (with pipe)
 		}
 
 		$pattern = preg_replace ( '/\$1/' , $params['file'] , $pattern ) ;
@@ -370,7 +370,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 			$new_text = preg_replace ( "/\b$pattern\b/" , $new_file , $new_text ) ;
 		}
 		
-		if ( $text == $new_text ) { # No change
+		if ( $text == $new_text ) { # No change
 			$this->setDone ( $e->id , 2 , 'File link not found in page' ) ;
 			return ;
 		}

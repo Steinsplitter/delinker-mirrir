@@ -22,7 +22,7 @@ $status = array (
 $cd = new CommonsDelinquent() ;
 $db = $cd->getToolDB() ;
 if($_GET["cnt"] == "true"){
-$sql = "select count(*) as cnt from  event where done=0" ;
+$sql = "select count(file) as cnt from  event where done=0" ;
 $result = $cd->runQuery ( $db , $sql ) ;
 while($o = $result->fetch_object()) $pending = $o->cnt ;
 }

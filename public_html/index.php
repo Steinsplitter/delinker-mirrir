@@ -55,7 +55,7 @@ print "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http:/
     </div>
   </div>";
 require_once ( "/data/project/tooltranslate/public_html/tt.php") ;
-$tt = new ToolTranslation ( array ( 'tool' => 'delinquent' , 'language' => 'en' , 'highlight_missing' => false ) ) ;
+$tt = new ToolTranslation ( array ( 'tool' => 'delinquent' , 'language' => 'en', 'fallback' => 'en', 'highlight_missing' => false ) ) ;
 print $tt->getJS('#tooltranslate_wrapper') ;
 print $tt->getJS() ;
 print "<div class=\"container\">

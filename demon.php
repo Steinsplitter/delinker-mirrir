@@ -480,7 +480,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$t = explode ( "\n" , $t ) ;
 		$nt = array() ;
 		foreach ( $t AS $l ) {
-			if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(.+?)\s*\}\}/' , $l , $m ) ) {
+			if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(\S.*?)\s*\}\}/' , $l , $m ) ) {
 				if ( !preg_match ( '/^\s*\{\{\s*[Uu]niversal[ _]replace\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*reason\s*=\s*(.+?)\s*\|\s*user\s*=\s*(.+?)\s*\}\}/' , $l , $m ) ) {
 					$nt[] = $l ;
 					continue ;

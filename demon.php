@@ -351,6 +351,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		}
 		$pattern = preg_replace ( '/[_ ]/' , '[ _]' , $file ) ;
 		$pattern = preg_replace ( '/\./' , '\\.' , $pattern ) ;
+		$pattern = preg_replace ( '/\^/' , '\\^' , $pattern ) ;
 		
 		$new_text = $text ;
 

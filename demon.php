@@ -10,6 +10,10 @@ require_once ( './shared.inc' ) ;
 
 class CommonsDelinquentDemon extends CommonsDelinquent {
 
+	var $avoidNamespaceOnWiki = [
+		'dewiki' => [4]
+	] ;
+
 	var $delay_minutes = 10 ;  # Wait after deletion
 	var $fallback_minutes = 120 ; # Only used if DB is empty
 	var $max_text_diff = 1500 ; # Max char diff
@@ -43,6 +47,12 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		if ( $o->gil_page_namespace_id == 6 and $o->gil_wiki == 'commonswiki' and $o->gil_to == $filename ) return true ; // Self-reference
 		if ( $o->gil_page_namespace_id == 2 and $o->gil_wiki == 'commonswiki' and preg_match ( '/^\w+Bot\b/' , $o->gil_page_title ) ) return true ; // Bot subpage on Commons
 		if ( $o->gil_page_namespace_id == 4 and $o->gil_wiki == 'commonswiki' and preg_match ( '/(Deletion(_| )requests\/.*|Undeletion(_| )requests\/.*)\b/' , $o->gil_page_title ) ) return true ; // DR and UDR on Commons
+		foreach ( $this->avoidNamespaceOnWiki AS $wiki => $namespaces ) {
+			if ( $o->gil_wiki != $wiki ) continue ;
+			foreach ( $namespaces AS $namespace ) {
+				if ( $namespace == $o->gil_page_namespace_id ) return true ;
+			}
+		}
 		return false ;
 	}
 	

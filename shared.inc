@@ -52,6 +52,7 @@ class CommonsDelinquent {
 #		if ( preg_match ( '/^suwiki$/' , $wiki  ) ) return true ;
 		if ( preg_match ( '/usability/' , $wiki  ) ) return true ;
 		if ( $wiki == 'donatewiki' ) return true ;
+        if ( $wiki == 'idwikimedia' ) return true ;
 
         if ( $wiki == 'bdwikimedia' ) return true ;
 

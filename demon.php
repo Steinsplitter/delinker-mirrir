@@ -364,7 +364,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		}
 		$pattern = str_replace ( '_' , ' ' , $pattern ) ;
 		$pattern = $first_letter . preg_quote ( $pattern, '/' ) ;
-		$pattern = str_replace ( ' ' , '[_ ]' , $file ) ;
+		$pattern = str_replace ( ' ' , '[_ ]' , $pattern ) ;
 		
 		$new_text = $text ;
 

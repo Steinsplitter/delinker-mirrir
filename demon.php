@@ -355,13 +355,16 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 		$text = $revision->getContent()->getData() ;
 		
 		$file = $e->file ;
-		$first_letter = substr ( $e->file , 0 , 1 ) ;
+		$first_letter = substr ( $file , 0 , 1 ) ;
+		$pattern = substr ( $file , 1 ) ;
 		if ( strtoupper($first_letter) != strtolower($first_letter) ) {
-			$file = "[" . strtoupper($first_letter) . strtolower($first_letter) . "]" . substr ( $e->file , 1 ) ;
+			$first_letter = "[" . strtoupper($first_letter) . strtolower($first_letter) . "]" ;
+		} else {
+			$first_letter = preg_quote ( $first_letter , '/' ) ; # can be metacharacter
 		}
-		$pattern = preg_replace ( '/[_ ]/' , '[ _]' , $file ) ;
-		$pattern = preg_replace ( '/\./' , '\\.' , $pattern ) ;
-		$pattern = preg_replace ( '/\^/' , '\\^' , $pattern ) ;
+		$pattern = str_replace ( '_' , ' ' , $pattern ) ;
+		$pattern = $first_letter . preg_quote ( $pattern, '/' ) ;
+		$pattern = str_replace ( ' ' , '[_ ]' , $pattern ) ;
 		
 		$new_text = $text ;
 

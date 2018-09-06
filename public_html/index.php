@@ -148,8 +148,8 @@ if ( $mode == 'latest' ) {
         print "</tbody></table>" ;
 
         print "<div>" ;
-        if ( $offset > 0 ) print "<a href='?mode=$mode&num=$num&offset=" . ($offset-$num) . "'><span tt=\"newer\">Newer</span> $num</a> | " ;
-        print "<a href='?mode=$mode&num=$num&offset=" . ($offset+$num) . "'><span tt=\"older\">Older</span> $num</a>" ;
+        if ( $offset > 0 ) print "<a href='?action=$action&result=$result&mode=$mode&num=$num&offset=" . ($offset-$num) . "'><span tt=\"newer\">Newer</span> $num</a> | " ;
+        print "<a href='?action=$action&result=$result&mode=$mode&num=$num&offset=" . ($offset+$num) . "'><span tt=\"older\">Older</span> $num</a>" ;
         print "</div>" ;
 
 }

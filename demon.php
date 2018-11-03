@@ -63,7 +63,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 
 		# Get all file deletions
 		$delink_files = array() ; # Files to delink
-		$sql = "SELECT * FROM logging WHERE log_type='delete' AND log_action='delete' AND log_timestamp>='$max_ts' AND log_timestamp<'$cur_ts' AND log_namespace=6" ;
+		$sql = "SELECT * FROM logging LEFT JOIN comment ON comment_id = log_comment_id WHERE log_type='delete' AND log_action='delete' AND log_timestamp>='$max_ts' AND log_timestamp<'$cur_ts' AND log_namespace=6" ;
 		$sql .= " AND NOT EXISTS (SELECT * FROM image WHERE img_name=log_title)" ;
 		$sql .= " AND NOT EXISTS (SELECT * FROM page WHERE page_title=log_title AND page_namespace=6 AND page_is_redirect=1)" ; # Do not remove redirects. Is that OK???
 		$sql .= " ORDER BY log_timestamp ASC" ;
@@ -154,7 +154,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	function constructUnlinkComment ( $file , $usage ) {
 		$pattern = $this->getLocalizedCommentPattern ( $usage->gil_wiki ) ;
 		
-		$c = $file->log_comment ;
+		$c = $file->comment_text ;
 		if ( $usage->wiki != 'commonswiki' ) { # Point original comment links to Commons
 			$c = preg_replace ( '/\[\[([^|]+?)\]\]/' , '[[:c:\1|]]' , $c ) ; # Pointing to Commons (no pipe)
 			$c = preg_replace ( '/\[\[([^:].+?)\]\]/' , '[[:c:\1]]' , $c ) ; # Pointing to Commons (with pipe)

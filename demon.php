@@ -138,7 +138,7 @@ class CommonsDelinquentDemon extends CommonsDelinquent {
 	/**
 		mode	"summary" or "replace"
 	*/
-	function getLocalizedCommentPattern ( $wiki , $mode ) {
+	function getLocalizedCommentPattern ( $wiki , $mode = 'summary') {
 		if ( !isset($mode) ) $mode = 'summary' ;
 		if ( isset ( $this->comments[$mode][$wiki] ) ) return $this->comments[$mode][$wiki] ;
 		$pattern = $this->comments_default[$mode] ; # Default

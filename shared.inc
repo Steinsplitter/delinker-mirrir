@@ -77,7 +77,7 @@ class CommonsDelinquent {
 		return $ret ;
 	}
 	
-	function setDone ( $id , $value , $meta ) {
+	function setDone ( $id , $value , $meta = null) {
 		$db = $this->getToolDB() ;
 		$sql = "UPDATE event SET done=" . ($value*1) ;
 		if ( isset ( $meta ) ) {

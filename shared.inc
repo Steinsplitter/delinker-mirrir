@@ -139,7 +139,9 @@ class CommonsDelinquent {
 			$x = false ;
 		}
 		if ( $this->debugging ) print_r ( $x ) ;
-		$api->logout() ;
+		//$api->logout() ;
+		$params['token'] = $api->getToken() ;
+        $api->postRequest( new \Mediawiki\Api\SimpleRequest( "logout", $params ) );
 		return $x ;
 	}
 

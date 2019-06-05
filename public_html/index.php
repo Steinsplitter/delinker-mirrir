@@ -76,7 +76,7 @@ $output3 = str_replace("'demon'","",$output2);
 if (preg_match('/has been running/', $output2)) {
     print "<br><br><p class='alert alert-success'><big><span tt=\"botrunning\">Bot is running...</span></big><br><small>$output3</small></p>";
 } else {
-    print "<br><br><p class='alert alert-danger'><big>><span tt=\"botnotrunning\">Bot is not running.</span></big><br>$output3</p>";
+    print "<br><br><p class='alert alert-danger'><big><span tt=\"botnotrunning\">Bot is not running.</span></big><br>$output3</p>";
 }
 print "<a class='btn btn-default' href='index.php' role='button'><span tt=\"home\">Home</span></a>";
 print "</div></div>";

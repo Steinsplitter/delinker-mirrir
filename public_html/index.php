@@ -78,9 +78,9 @@ if (preg_match('/has been running/', $output2)) {
 } else {
     print "<br><br><p class='alert alert-danger'><big><span tt=\"botnotrunning\">Bot is not running.</span></big><br>$output3</p>";
 }
-print "<a class='btn btn-default' href='index.php' role='button'><span tt=\"home\">Home</span></a>";
-print "<a class='btn btn-default' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues?status=new&status=open' role='button'>Bugtracker</a>";
-print "<a class='btn btn-primary' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues/new' role='button'>Report a Bug</a>";
+print "<a class='btn btn-default' href='index.php' role='button'><span tt=\"home\">Home</span></a>&nbsp;";
+print "<a class='btn btn-default' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues?status=new&status=open' role='button'>Bugtracker</a>&nbsp;";
+print "<a class='btn btn-primary' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues/new' role='button'>Report a Bug</a>&nbsp;";
 print "</div></div>";
 exit();
 }

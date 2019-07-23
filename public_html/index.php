@@ -79,6 +79,8 @@ if (preg_match('/has been running/', $output2)) {
     print "<br><br><p class='alert alert-danger'><big><span tt=\"botnotrunning\">Bot is not running.</span></big><br>$output3</p>";
 }
 print "<a class='btn btn-default' href='index.php' role='button'><span tt=\"home\">Home</span></a>";
+print "<a class='btn btn-default' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues?status=new&status=open' role='button'><span tt=\"bugtracker\">Bugtracker</span></a>";
+print "<a class='btn btn-primary' href='https://bitbucket.org/magnusmanske/commons-delinquent/issues/new' role='button'><span tt=\"bugreport\">Report a Bug</span></a>";
 print "</div></div>";
 exit();
 }
